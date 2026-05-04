@@ -3,131 +3,15 @@ title: Varmo Documentation
 description: Everything you need to integrate Varmo's card delivery intelligence API and turn the delivery window into a customer activation moment.
 ---
 
-<div data-product-guide-index className="flex w-full flex-col gap-8">
-  <div className="flex max-w-[540px] flex-col gap-2 self-center text-center">
-    <h1 className="font-serif text-[30px] font-medium leading-9 tracking-tight text-gray-900 dark:text-gray-50">
-      Varmo Documentation
-    </h1>
-    <p className="text-balance text-sm leading-relaxed tracking-tight text-gray-600 dark:text-gray-400">
-      Everything you need to integrate Varmo's card delivery intelligence API and turn the delivery window into a customer activation moment.
-    </p>
-  </div>
+Everything you need to integrate Varmo's card delivery intelligence API and turn the delivery window into a customer activation moment.
 
-  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-    <Card
-      title={<span className="product-guide-feature-card-title">Get started</span>}
-      icon="rocket"
-      href="/introduction"
-      className="product-guide-feature-card"
-      size={64}
-    >
-      <span className="product-guide-feature-card-description">Understand what Varmo does and make your first API call.</span>
-    </Card>
+<CardGroup cols={2}>
+  <Card title="Guides" icon="map-pin">
+    Step-by-step walkthroughs for tracking deliveries and driving card activation.
+  </Card>
+  <Card title="API Reference" icon="code-2">
+    Full reference for the Status API — endpoints, parameters, and response fields.
+  </Card>
+</CardGroup>
 
-    <a
-      href="/api-reference/get-status"
-      className="flex flex-col gap-4 rounded-none border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
-    >
-      <Icon icon="code-2" color="rgb(var(--primary))" size={18} className="shrink-0" />
-      <div className="flex flex-col gap-1">
-        <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">API Reference</span>
-        <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-          Full reference for the Status API — endpoints, parameters, and response fields.
-        </span>
-      </div>
-    </a>
-    <a
-      href="/guides/track-card-delivery"
-      className="flex flex-col gap-4 rounded-none border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
-    >
-      <Icon icon="map-pin" color="rgb(var(--primary))" size={18} className="shrink-0" />
-      <div className="flex flex-col gap-1">
-        <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Guides</span>
-        <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-          Step-by-step walkthroughs for tracking deliveries and driving card activation.
-        </span>
-      </div>
-    </a>
-  </div>
 
-  <hr className="border-0 border-t border-border" />
-
-  <div className="flex flex-col gap-4">
-    <h2 className="font-serif text-xl font-medium leading-normal text-gray-900 dark:text-gray-50">Common tasks</h2>
-
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <a
-        href="/quickstart"
-        className="flex flex-col gap-4 rounded-none border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
-      >
-        <Icon icon="zap" color="rgb(var(--primary))" size={18} className="shrink-0" />
-        <div className="flex flex-col gap-1">
-          <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Make your first API call</span>
-          <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            Authenticate and call GET /v1/status in under 5 minutes.
-          </span>
-        </div>
-      </a>
-      <a
-        href="/authentication"
-        className="flex flex-col gap-4 rounded-none border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
-      >
-        <Icon icon="key" color="rgb(var(--primary))" size={18} className="shrink-0" />
-        <div className="flex flex-col gap-1">
-          <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Set up authentication</span>
-          <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            Get your API key and learn how to pass it in every request.
-          </span>
-        </div>
-      </a>
-      <a
-        href="/concepts/predictions"
-        className="flex flex-col gap-4 rounded-none border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
-      >
-        <Icon icon="calendar-range" color="rgb(var(--primary))" size={18} className="shrink-0" />
-        <div className="flex flex-col gap-1">
-          <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Understand delivery predictions</span>
-          <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            Learn how Varmo calculates delivery windows and confidence levels.
-          </span>
-        </div>
-      </a>
-      <a
-        href="/guides/customer-activation"
-        className="flex flex-col gap-4 rounded-none border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
-      >
-        <Icon icon="sparkles" color="rgb(var(--primary))" size={18} className="shrink-0" />
-        <div className="flex flex-col gap-1">
-          <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Drive card activation</span>
-          <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            Use UI suggestions to engage customers during the delivery window.
-          </span>
-        </div>
-      </a>
-      <a
-        href="/guides/webhooks"
-        className="flex flex-col gap-4 rounded-none border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
-      >
-        <Icon icon="webhook" color="rgb(var(--primary))" size={18} className="shrink-0" />
-        <div className="flex flex-col gap-1">
-          <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Set up webhooks</span>
-          <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            Receive push notifications when a card's delivery status changes.
-          </span>
-        </div>
-      </a>
-      <a
-        href="/compliance/overview"
-        className="flex flex-col gap-4 rounded-none border bg-gray-50 p-4 outline-none shadow-sm shadow-gray-950/5 transition hover:border-primary hover:shadow-md dark:bg-gray-950 dark:shadow-black/20 dark:hover:border-primary"
-      >
-        <Icon icon="shield-check" color="rgb(var(--primary))" size={18} className="shrink-0" />
-        <div className="flex flex-col gap-1">
-          <span className="font-serif text-base font-medium text-gray-900 dark:text-gray-50">Security & compliance</span>
-          <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            PCI-DSS scope, GDPR compliance, and SOC 2 certification details.
-          </span>
-        </div>
-      </a>
-    </div>
-  </div>
-</div>
