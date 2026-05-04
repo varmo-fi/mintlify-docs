@@ -1,0 +1,57 @@
+---
+title: "GDPR compliance and data handling in Varmo"
+description: "Learn what data Varmo processes, the legal basis for that processing, your data subject rights obligations, and how to request a DPA."
+sidebarTitle: "GDPR"
+---
+
+Varmo is designed to operate without personal data. The API requires only a dispatch UUID you generate, a dispatch date, a destination postal code, and a destination country code. In isolation, none of these fields identify a natural person, which means Varmo's data model minimises GDPR exposure for you as the card issuer. Where Varmo does act as a data processor on your behalf, it operates within a defined legal basis and supports your obligations to data subjects.
+
+## What data Varmo processes
+
+The following table lists every field Varmo receives when you call the Status API.
+
+| Field | Type | Is it PII? | Purpose |
+|---|---|---|---|
+| `id` (dispatch UUID) | Identifier | No (pseudonymous) | Tracks a single card dispatch through the delivery lifecycle |
+| `dispatch_date` | Timestamp | No | Anchors the delivery window prediction model |
+| `destination.postal_code` | Geographic | No | Regional input for carrier performance modelling |
+| `destination.country_code` | Geographic (ISO 3166-1 alpha-2) | No | Routes the dispatch to the correct regional prediction model |
+
+<Note>
+Varmo never receives the cardholder's name, email address, phone number, physical address, date of birth, or any other directly identifying data. If your integration sends these fields, remove them — they are not used and should not be transmitted.
+</Note>
+
+## Legal basis for processing
+
+Varmo processes dispatch data under **legitimate interests** (Article 6(1)(f) GDPR) on behalf of the card issuer. The legitimate interest is providing accurate delivery predictions that enable card issuers to communicate meaningfully with cardholders during the delivery window. Because the data Varmo processes is pseudonymous and does not directly identify individuals, the processing activity carries a low risk to data subjects' rights and freedoms.
+
+As the card issuer, you are the data controller. Varmo acts as a data processor on your behalf. This relationship is formalised in a Data Processing Agreement (see below).
+
+## Data processor agreement (DPA)
+
+Varmo acts as a data processor under Article 28 GDPR. Before going live in production, you should have a signed DPA in place. The Varmo DPA covers:
+
+- The subject matter, duration, nature, and purpose of the processing
+- The categories of data and data subjects involved
+- Varmo's obligations and rights as a processor
+- Sub-processor disclosure and notification obligations
+
+To request a DPA, email [privacy@varmo.fi](mailto:privacy@varmo.fi) with your organisation name and the email address of your data protection contact.
+
+## Data subject rights
+
+Because Varmo holds no directly identifying personal data, most data subject access requests (DSARs) submitted to Varmo in isolation will return no data or pseudonymous records only — a dispatch UUID tied to a postal code does not on its own identify a person.
+
+If one of your cardholders exercises their rights under Articles 15–22 GDPR and you need Varmo's cooperation to fulfil the request, Varmo will assist you within 30 days of a written request. Send DSAR cooperation requests to [privacy@varmo.fi](mailto:privacy@varmo.fi) with the dispatch UUID(s) in scope.
+
+## Data transfers
+
+Varmo processes all dispatch data within the EU/EEA. Varmo does not transfer personal data to third countries unless adequate safeguards — such as Standard Contractual Clauses — are in place and disclosed in the DPA. If your organisation's compliance requirements restrict cross-border data transfers, confirm the processing region with Varmo before going live.
+
+## Data retention
+
+Varmo retains dispatch records for 90 days after the expected delivery window for that dispatch closes. Records are deleted automatically at the end of that period. No manual intervention is required on your part, and deleted records cannot be recovered. If you need to retain dispatch records for your own compliance obligations, export them to your systems before the 90-day window expires.
+
+<Tip>
+To request a DPA, ask a data protection question, or submit a DSAR cooperation request, email [privacy@varmo.fi](mailto:privacy@varmo.fi). Include your organisation name and a description of your request.
+</Tip>

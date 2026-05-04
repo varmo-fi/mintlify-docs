@@ -1,0 +1,103 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Varmo",
+  "description": "Card delivery intelligence API — bridge the gap between card issuance and delivery.",
+  "colors": {
+    "primary": "#1A1A2E",
+    "light": "#F5F5F7",
+    "dark": "#0D0D1A"
+  },
+  "favicon": {
+    "light": "/favicon.ico",
+    "dark": "/favicon.ico"
+  },
+  "icons": {
+    "library": "lucide"
+  },
+  "styling": {
+    "eyebrows": "breadcrumbs"
+  },
+  "contextual": {
+    "options": ["copy", "view", "assistant", "mcp", "add-mcp"]
+  },
+  "navigation": {
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Home",
+          "icon": "house",
+          "href": "https://varmo.fi/"
+        }
+      ]
+    },
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/delivery-lifecycle",
+              "concepts/predictions",
+              "concepts/ui-suggestions"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/track-card-delivery",
+              "guides/customer-activation",
+              "guides/webhooks"
+            ]
+          },
+          {
+            "group": "Security & Compliance",
+            "pages": [
+              "compliance/overview",
+              "compliance/gdpr"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Status API",
+            "pages": [
+              "api-reference/get-status",
+              "api-reference/errors"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [],
+    "primary": {
+      "type": "button",
+      "label": "Get API Access",
+      "href": "https://varmo.fi"
+    }
+  },
+  "footer": {
+    "socials": {}
+  },
+  "fonts": {
+    "family": "Inter"
+  }
+}

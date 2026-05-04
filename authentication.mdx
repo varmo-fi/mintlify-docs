@@ -1,0 +1,88 @@
+---
+title: "Authenticate with the Varmo API"
+description: "Varmo authenticates requests with API key Bearer tokens. Learn how to obtain your key, include it in every request, and keep it secure."
+sidebarTitle: "Authentication"
+---
+
+Every request to the Varmo API must include an API key passed as a Bearer token in the `Authorization` header. Varmo does not support session-based authentication or OAuth — the API key is the sole authentication mechanism, and requests without a valid key are rejected immediately.
+
+## Get your API key
+
+Contact [Varmo](https://varmo.fi) to request API access. After Varmo provisions your account, you receive an API key scoped to your organisation. Each key grants access to the resources tied to your account only — keys cannot be used to query data belonging to other issuers.
+
+If you manage multiple environments (e.g. staging and production), request a separate key for each. Varmo support can rotate or revoke individual keys without affecting others.
+
+## Pass the key in requests
+
+Include your API key in the `Authorization` header of every HTTP request:
+
+```http
+Authorization: Bearer <YOUR_API_KEY>
+```
+
+<CodeGroup>
+
+```bash cURL
+curl --request GET \
+  --url https://api.varmo.fi/v1/status/12b986fd-8f73-4a55-b1b1-1b3f203c7522 \
+  --header 'Authorization: Bearer <YOUR_API_KEY>'
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.varmo.fi/v1/status/12b986fd-8f73-4a55-b1b1-1b3f203c7522',
+  {
+    headers: {
+      Authorization: 'Bearer <YOUR_API_KEY>',
+    },
+  }
+);
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.varmo.fi/v1/status/12b986fd-8f73-4a55-b1b1-1b3f203c7522',
+    headers={
+        'Authorization': 'Bearer <YOUR_API_KEY>',
+    },
+)
+data = response.json()
+```
+
+</CodeGroup>
+
+## Keep your key secure
+
+<Warning>
+  Never expose your API key in client-side code, public repositories, or browser network requests. If a key is compromised, contact Varmo support immediately to rotate it. A rotated key is issued and the compromised key is revoked — any requests using the old key will fail with a `401` error.
+</Warning>
+
+Store your API key as an environment variable and read it at runtime from your server-side code:
+
+```bash
+export VARMO_API_KEY="<YOUR_API_KEY>"
+```
+
+```javascript JavaScript
+const apiKey = process.env.VARMO_API_KEY;
+```
+
+```python Python
+import os
+
+api_key = os.environ['VARMO_API_KEY']
+```
+
+## Authentication errors
+
+If your request is rejected due to an authentication problem, Varmo returns one of the following HTTP error codes:
+
+| Status code | Error | Description |
+|---|---|---|
+| `401 Unauthorized` | `missing_token` | The `Authorization` header is absent or malformed. Check that you are sending `Bearer <YOUR_API_KEY>` and that no whitespace or encoding issues are present. |
+| `401 Unauthorized` | `invalid_token` | The API key is present but not recognised — it may be incorrect, expired, or already revoked. Verify the key in your environment and contact Varmo support if the problem persists. |
+| `403 Forbidden` | `insufficient_permissions` | The API key is valid but does not have permission to access the requested resource. This typically means the key is scoped to a different environment or account. |
+
+See [API errors](/api-reference/errors) for the full list of error codes and response shapes.

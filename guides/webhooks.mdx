@@ -1,0 +1,152 @@
+---
+title: "Receive delivery status updates via webhooks"
+description: "Register a webhook endpoint with Varmo to receive instant push notifications whenever a card's delivery status changes, eliminating the need to poll."
+sidebarTitle: "Webhooks"
+---
+
+Instead of polling the Status API on a schedule, you can register a webhook endpoint with Varmo to receive delivery status-change events as they happen. When a card's status transitions — for example, from `in_transit` to `out_for_delivery` — Varmo sends an HTTP `POST` request to your endpoint with the full updated payload. This removes polling overhead from your infrastructure and ensures your application always reacts to status changes in real time.
+
+## Configure your webhook endpoint
+
+Register your webhook URL through the Varmo dashboard under **Settings → Webhooks**. Your endpoint must meet the following requirements before Varmo will deliver events to it:
+
+- Accept `POST` requests with a `Content-Type: application/json` body
+- Return `HTTP 200` within 5 seconds of receiving the request
+- Validate the `X-Varmo-Signature` header on every inbound request (see [Validate webhook signatures](#validate-webhook-signatures))
+
+When a status change occurs, Varmo sends a payload with this structure:
+
+```json webhook payload
+{
+  "event": "status.updated",
+  "timestamp": "2026-05-03T09:15:00Z",
+  "data": {
+    "id": "12b986fd-8f73-4a55-b1b1-1b3f203c7522",
+    "status": "out_for_delivery",
+    "prediction": {
+      "delivery_window": { "min": "2026-05-03", "max": "2026-05-04" },
+      "confidence_level": "High"
+    },
+    "ui_suggestion": {
+      "locale": "en-US",
+      "recommended_message": "Your card is out for delivery today.",
+      "recommended_action": "None"
+    }
+  }
+}
+```
+
+The `data` object matches the response shape of `GET /v1/status/{id}`, so you can use the same parsing logic for both polling and webhook-driven flows.
+
+## Validate webhook signatures
+
+Every request Varmo sends to your endpoint includes an `X-Varmo-Signature` header containing an HMAC-SHA256 signature of the raw request body, signed with your webhook secret. Validate this signature before processing any payload to confirm the request originated from Varmo.
+
+<Warning>
+  Always validate `X-Varmo-Signature` before processing webhook payloads. Skipping this check exposes your endpoint to spoofed events that could trigger unintended activation flows or misleading status updates for your cardholders.
+</Warning>
+
+Retrieve your webhook secret from the Varmo dashboard under **Settings → Webhooks**. Then implement signature validation as follows:
+
+<CodeGroup>
+
+```javascript Node.js
+const crypto = require("crypto");
+
+function verifyVarmoSignature(rawBody, signatureHeader, webhookSecret) {
+  const expected = crypto
+    .createHmac("sha256", webhookSecret)
+    .update(rawBody)
+    .digest("hex");
+
+  const received = signatureHeader ?? "";
+
+  // Use timingSafeEqual to prevent timing attacks
+  const expectedBuffer = Buffer.from(expected, "utf8");
+  const receivedBuffer = Buffer.from(received, "utf8");
+
+  if (expectedBuffer.length !== receivedBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
+}
+
+// Express example
+app.post("/webhooks/varmo", express.raw({ type: "application/json" }), (req, res) => {
+  const signature = req.headers["x-varmo-signature"];
+  const isValid = verifyVarmoSignature(req.body, signature, process.env.VARMO_WEBHOOK_SECRET);
+
+  if (!isValid) {
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
+  const event = JSON.parse(req.body);
+  handleVarmoEvent(event);
+
+  res.sendStatus(200);
+});
+```
+
+```python Python
+import hashlib
+import hmac
+import os
+from flask import Flask, request, abort
+
+app = Flask(__name__)
+
+def verify_varmo_signature(raw_body: bytes, signature_header: str, secret: str) -> bool:
+    expected = hmac.new(
+        secret.encode("utf-8"),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+
+    return hmac.compare_digest(expected, signature_header or "")
+
+
+@app.route("/webhooks/varmo", methods=["POST"])
+def varmo_webhook():
+    signature = request.headers.get("X-Varmo-Signature", "")
+    secret = os.environ["VARMO_WEBHOOK_SECRET"]
+
+    if not verify_varmo_signature(request.get_data(), signature, secret):
+        abort(401)
+
+    event = request.get_json()
+    handle_varmo_event(event)
+
+    return "", 200
+```
+
+</CodeGroup>
+
+Always compute the HMAC over the **raw request body bytes** before any JSON parsing. Parsing the body first and re-serializing it may alter whitespace or key ordering, causing signature verification to fail even for legitimate requests.
+
+## Webhook event types
+
+| Event | Description |
+|---|---|
+| `status.updated` | Fired whenever the card's delivery status transitions to a new value (for example, `dispatched` → `in_transit`). |
+| `delivery.predicted` | Fired when Varmo calculates a new or revised delivery window prediction for the dispatch. |
+| `delivery.completed` | Fired when the card's status reaches `delivered`, indicating the card has arrived at its destination. |
+| `delivery.exception` | Fired when Varmo detects a delivery exception, such as a failed delivery attempt or a postal delay. |
+
+Subscribe only to the event types your application needs. Filtering at the subscription level reduces traffic to your endpoint and simplifies your event handler logic.
+
+## Retry behavior
+
+If your endpoint returns a non-2xx status code or does not respond within 5 seconds, Varmo marks the delivery attempt as failed and schedules a retry using exponential backoff. Varmo retries up to **5 times** over a **24-hour window** before marking the event as permanently undeliverable.
+
+Retry schedule after the initial failure:
+
+| Attempt | Delay after previous attempt |
+|---|---|
+| 1 | 1 minute |
+| 2 | 5 minutes |
+| 3 | 30 minutes |
+| 4 | 2 hours |
+| 5 | 8 hours |
+
+To avoid processing the same event more than once, treat webhook delivery as at-least-once. Use `data.id` combined with `event` and `timestamp` as a deduplication key and check against a short-lived store (such as Redis) before updating your application state.

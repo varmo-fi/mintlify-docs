@@ -1,0 +1,35 @@
+---
+title: "Card delivery lifecycle in Varmo"
+description: "Understand the stages a card moves through from dispatch to delivery and how Varmo tracks each stage using regional postal intelligence."
+sidebarTitle: "Delivery Lifecycle"
+---
+
+When a card issuer dispatches a physical card, the cardholder enters a period of uncertainty — they know a card is coming, but have no way to gauge when it will arrive. Varmo models this journey as a series of discrete lifecycle stages, each with a corresponding `status` value that you can surface in your product. Understanding the lifecycle helps you set accurate cardholder expectations and intervene proactively when deliveries go off track.
+
+## Lifecycle stages
+
+Each card tracked by Varmo moves through a defined set of statuses. Varmo infers the current status from dispatch metadata and its regional latency model — not from carrier scan events.
+
+| Status | Meaning | Typical duration |
+|---|---|---|
+| `dispatched` | The card has left the issuer's fulfilment centre and entered the postal network. | Hours to 1 day |
+| `in_transit` | The card is moving through the postal network toward its destination. | 1–5 days |
+| `out_for_delivery` | The card is with the local delivery agent and is expected to arrive today. | Same day |
+| `delivered` | Varmo's model indicates the card has reached its destination. | — |
+| `exception` | An anomaly has been detected — for example, the card has not progressed as expected within the predicted window. | Ongoing until resolved |
+
+## The dead zone problem
+
+Standard postal services rarely provide real-time tracking for standard-class card mail. Once a card leaves the fulfilment centre, issuers have no direct visibility into where it is or when it will arrive. This gap — the period between dispatch and delivery — creates a poor cardholder experience: support contact rates rise, activation is delayed, and trust in the issuer erodes.
+
+Varmo solves this by combining the dispatch date and destination location with continuously updated ground-truth postal data. Rather than waiting for a carrier to emit a scan event, Varmo uses regional latency patterns derived from historical delivery outcomes to infer where in the journey a card most likely is at any given moment.
+
+## How status transitions work
+
+Varmo evaluates two inputs from your dispatch event: the `dispatch_date` and the destination `postal_code` paired with `country_code`. These are matched against Varmo's regional latency model — a dataset built from ground-truth delivery records across postal regions — to compute the expected time for each stage of the journey.
+
+As time elapses relative to the dispatch date, Varmo advances the inferred status through the lifecycle. When elapsed time or pattern anomalies fall outside the expected range for a given postal region, Varmo transitions the card to `exception`.
+
+<Note>
+  The `status` field in the API response reflects Varmo's inference based on regional postal data. It is not derived from a carrier scan event and should be presented to cardholders accordingly.
+</Note>

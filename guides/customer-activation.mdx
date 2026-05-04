@@ -1,0 +1,170 @@
+---
+title: "Drive card activation with delivery intelligence"
+description: "Use Varmo's delivery predictions and UI suggestions to build anticipation during the dispatch window and convert cardholders at the moment of arrival."
+sidebarTitle: "Customer Activation"
+---
+
+The period between card dispatch and physical delivery is the highest-risk window for cardholder engagement. Cardholders who receive no communication during this window are less likely to activate their card promptly — and in some cases, forget the card is coming entirely. Varmo gives you the delivery intelligence to turn this dead zone into a structured activation journey, with per-phase messaging cues your application can act on immediately.
+
+## The activation window
+
+Varmo models the delivery journey in three distinct phases. Each phase has a different cardholder intent signal and a corresponding action your application should take.
+
+<Tabs>
+  <Tab title="Dispatched">
+    When `status` is `"dispatched"`, the card has left the fulfillment center and is in the postal network. Use `ui_suggestion.recommended_message` to send an anticipation push notification — cardholders who know a card is coming are significantly more likely to activate it on arrival.
+
+    ```json API response (dispatched)
+    {
+      "status": "dispatched",
+      "ui_suggestion": {
+        "locale": "en-US",
+        "recommended_message": "Your card is on its way and should arrive by May 4.",
+        "recommended_action": "None"
+      }
+    }
+    ```
+
+    ```javascript send-dispatch-notification.js
+    async function onCardDispatched(dispatchResponse) {
+      const { recommended_message } = dispatchResponse.ui_suggestion;
+
+      await pushNotification.send({
+        title: "Your card has been dispatched",
+        body: recommended_message,
+        deepLink: "/card/delivery-status",
+      });
+    }
+    ```
+  </Tab>
+
+  <Tab title="In transit">
+    When `status` is `"in_transit"` and the current date is approaching `prediction.delivery_window.max`, send a "your card is almost here" message that includes the delivery window. Use the window dates to set a concrete expectation rather than relying solely on the `recommended_message`.
+
+    ```json API response (in transit)
+    {
+      "status": "in_transit",
+      "prediction": {
+        "delivery_window": {
+          "min": "2026-05-02",
+          "max": "2026-05-04"
+        },
+        "confidence_level": "High"
+      },
+      "ui_suggestion": {
+        "locale": "en-US",
+        "recommended_message": "Your card is likely arriving in the next 1-2 days.",
+        "recommended_action": "None"
+      }
+    }
+    ```
+
+    ```javascript send-approaching-notification.js
+    function isApproachingDelivery(prediction) {
+      const windowEnd = new Date(prediction.delivery_window.max);
+      const today = new Date();
+      const daysRemaining = Math.ceil(
+        (windowEnd - today) / (1000 * 60 * 60 * 24)
+      );
+      return daysRemaining <= 2 && prediction.confidence_level === "High";
+    }
+
+    async function onInTransit(response) {
+      if (isApproachingDelivery(response.prediction)) {
+        const { recommended_message } = response.ui_suggestion;
+        await pushNotification.send({
+          title: "Your card is almost there",
+          body: recommended_message,
+          deepLink: "/card/delivery-status",
+        });
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Delivered">
+    When `status` is `"delivered"` or `ui_suggestion.recommended_action` is `"Activate"`, trigger your card activation prompt immediately. This is the highest-intent moment in the delivery journey — the cardholder has the card in hand and is ready to act.
+
+    ```json API response (delivered)
+    {
+      "status": "delivered",
+      "ui_suggestion": {
+        "locale": "en-US",
+        "recommended_message": "Your card has arrived. Activate it now to start spending.",
+        "recommended_action": "Activate"
+      }
+    }
+    ```
+
+    ```javascript trigger-activation.js
+    function handleDeliveryStatus(response) {
+      const { status } = response;
+      const { recommended_action, recommended_message } = response.ui_suggestion;
+
+      if (status === "delivered" || recommended_action === "Activate") {
+        showActivationModal({
+          headline: recommended_message,
+          ctaLabel: "Activate my card",
+          onConfirm: () => router.push("/card/activate"),
+        });
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Using locale for localization
+
+Varmo infers the cardholder's locale from their postal code and country code and returns it in `ui_suggestion.locale`. Use this value to route your application to the correct translation strings when you compose supplementary UI copy around the `recommended_message`.
+
+```javascript locale-routing.js
+const SUPPORTED_LOCALES = ["en-US", "fi-FI", "de-DE", "fr-FR", "sv-SE"];
+const DEFAULT_LOCALE = "en-US";
+
+const translations = {
+  "en-US": {
+    activationCta: "Activate your card",
+    supportCta: "Contact support",
+    statusLabel: "Delivery status",
+  },
+  "fi-FI": {
+    activationCta: "Aktivoi korttisi",
+    supportCta: "Ota yhteyttä tukeen",
+    statusLabel: "Toimituksen tila",
+  },
+  "de-DE": {
+    activationCta: "Karte aktivieren",
+    supportCta: "Support kontaktieren",
+    statusLabel: "Lieferstatus",
+  },
+};
+
+function getTranslations(locale) {
+  const resolvedLocale = SUPPORTED_LOCALES.includes(locale)
+    ? locale
+    : DEFAULT_LOCALE;
+  return translations[resolvedLocale] ?? translations[DEFAULT_LOCALE];
+}
+
+function renderDeliveryUI(response) {
+  const { locale, recommended_message } = response.ui_suggestion;
+  const t = getTranslations(locale);
+
+  return {
+    statusLabel: t.statusLabel,
+    message: recommended_message, // already localized by Varmo
+    ctaLabel: t.activationCta,
+  };
+}
+```
+
+<Note>
+  Varmo's `recommended_message` is already localized to the cardholder's inferred locale — you can display it verbatim in your UI without passing it through your own translation pipeline. The `locale` field is provided so you can match surrounding UI elements to the same language.
+</Note>
+
+## Best practices
+
+- **Don't show raw ISO dates to cardholders.** Use `recommended_message` directly, or humanize `delivery_window.min` / `delivery_window.max` into a natural-language range (for example, "Saturday to Monday") before rendering it.
+- **Handle `recommended_action: "ContactSupport"` gracefully.** When Varmo returns this action, render a visible support CTA rather than a generic error. This action indicates a delivery exception that the cardholder may need to resolve with their postal service.
+- **Don't over-notify.** Send one notification per status transition — not one per poll cycle. Track the last status value you notified on and only send a new notification when `status` changes.
+- **Test with real postal codes in your target regions.** Varmo's predictions are grounded in regional postal data. Use real postal codes from your target markets in staging to verify that delivery windows and locales are resolved correctly.

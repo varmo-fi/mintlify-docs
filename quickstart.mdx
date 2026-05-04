@@ -1,0 +1,112 @@
+---
+title: "Quickstart: make your first Varmo API call"
+description: "Make your first call to the Varmo Status API in minutes — from getting your API key to reading a delivery prediction and displaying it in your app."
+sidebarTitle: "Quickstart"
+---
+
+This guide walks you through the full integration flow: obtaining credentials, registering a card dispatch, calling the Status API, reading the response, and surfacing delivery information to your cardholders.
+
+<Steps>
+  <Step title="Get your API key">
+    Contact [Varmo](https://varmo.fi) to request API access. Once your account is provisioned, Varmo issues you an API key scoped to your organisation.
+
+    Pass the key in the `Authorization` header of every request:
+
+    ```http
+    Authorization: Bearer <YOUR_API_KEY>
+    ```
+
+    Keep your key secret — never expose it in client-side code or public repositories.
+  </Step>
+
+  <Step title="Register a card dispatch">
+    When your issuer backend dispatches a card to a cardholder, notify Varmo so it can begin tracking the delivery. Your backend sends the dispatch event to Varmo, and Varmo returns (or assigns) a `dispatch_id` — a UUID that identifies this specific card journey.
+
+    Store the `dispatch_id` alongside your internal order record. All subsequent status queries for this card use that ID.
+  </Step>
+
+  <Step title="Call the Status API">
+    Query `GET https://api.varmo.fi/v1/status/{id}` at any point after dispatch — on page load, on a scheduled interval, or in response to a user action. Replace `{id}` with the `dispatch_id` you stored in the previous step.
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl --request GET \
+      --url https://api.varmo.fi/v1/status/12b986fd-8f73-4a55-b1b1-1b3f203c7522 \
+      --header 'Authorization: Bearer <YOUR_API_KEY>'
+    ```
+
+    ```javascript JavaScript
+    const dispatchId = '12b986fd-8f73-4a55-b1b1-1b3f203c7522';
+
+    const response = await fetch(
+      `https://api.varmo.fi/v1/status/${dispatchId}`,
+      {
+        headers: {
+          Authorization: 'Bearer <YOUR_API_KEY>',
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log(data);
+    ```
+
+    </CodeGroup>
+  </Step>
+
+  <Step title="Read the response">
+    A successful request returns a JSON object with delivery state, predicted arrival dates, and UI copy:
+
+    ```json
+    {
+      "id": "12b986fd-8f73-4a55-b1b1-1b3f203c7522",
+      "status": "dispatched",
+      "dispatch_date": "2026-04-29T14:22:01Z",
+      "destination": {
+        "postal_code": "00100",
+        "country_code": "FI"
+      },
+      "prediction": {
+        "delivery_window": {
+          "min": "2026-05-02",
+          "max": "2026-05-04"
+        },
+        "confidence_level": "High"
+      },
+      "ui_suggestion": {
+        "locale": "en-US",
+        "recommended_message": "Your card is likely arriving in the next 1-2 days.",
+        "recommended_action": "None"
+      }
+    }
+    ```
+
+    Key fields to understand:
+
+    - **`status`** — the current delivery state of the card (e.g. `dispatched`, `in_transit`, `delivered`).
+    - **`prediction.delivery_window`** — the `min` and `max` dates Varmo predicts for arrival, expressed as ISO 8601 date strings.
+    - **`prediction.confidence_level`** — how confident Varmo is in the window: `High`, `Medium`, or `Low`.
+    - **`ui_suggestion`** — a ready-to-render object containing a `locale`, a `recommended_message` for the cardholder, and a `recommended_action` your app should surface (or `"None"` if no action is needed).
+  </Step>
+
+  <Step title="Display to the cardholder">
+    Use `ui_suggestion.recommended_message` to show the cardholder their delivery status in your app. The message is already localised to the cardholder's locale (returned in `ui_suggestion.locale`), so you can render it directly without writing or translating copy.
+
+    ```javascript JavaScript
+    const { recommended_message, recommended_action } = data.ui_suggestion;
+
+    // Render the message in your UI
+    document.getElementById('delivery-status').textContent = recommended_message;
+
+    // Optionally surface the recommended action
+    if (recommended_action !== 'None') {
+      triggerAction(recommended_action);
+    }
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+  The Status API supports additional query parameters and returns a fuller set of response fields. See the [API Reference](/api-reference/get-status) for the complete parameter list, all possible `status` values, and error codes.
+</Tip>

@@ -1,0 +1,80 @@
+{
+  "projectType": "api-service",
+  "projectName": "Varmo",
+  "projectDescription": "Varmo is a card delivery intelligence API that bridges the visibility gap between card issuance and physical delivery, providing real-time status, predictive delivery windows, and UI localization hints to drive customer activation.",
+  "theme": "luma",
+  "primaryColor": "#1A1A2E",
+  "lightColor": "#F5F5F7",
+  "darkColor": "#0D0D1A",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/delivery-lifecycle",
+              "concepts/predictions",
+              "concepts/ui-suggestions"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/track-card-delivery",
+              "guides/customer-activation",
+              "guides/webhooks"
+            ]
+          },
+          {
+            "group": "Security & Compliance",
+            "pages": [
+              "compliance/overview",
+              "compliance/gdpr"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Status API",
+            "pages": [
+              "api-reference/get-status",
+              "api-reference/errors"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Real-time card delivery status via REST API",
+    "Predictive delivery window with confidence levels",
+    "UI localization suggestions (locale, recommended message, recommended action)",
+    "Regional latency mapping with ground-truth postal data",
+    "Out-of-scope of PCI-DSS by design — no card data handled",
+    "GDPR compliant — no PII required",
+    "SOC 2 Type I certification in progress"
+  ],
+  "publicApiSurface": [
+    "GET /v1/status/{id}",
+    "prediction.delivery_window (min, max dates)",
+    "prediction.confidence_level",
+    "ui_suggestion.locale",
+    "ui_suggestion.recommended_message",
+    "ui_suggestion.recommended_action",
+    "destination.postal_code",
+    "destination.country_code"
+  ]
+}

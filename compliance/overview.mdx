@@ -1,0 +1,58 @@
+---
+title: "Security and compliance overview for Varmo"
+description: "Understand Varmo's PCI-DSS out-of-scope architecture, SOC 2 Type I certification status, and GDPR compliance before you integrate."
+sidebarTitle: "Overview"
+---
+
+Security and compliance are foundational to Varmo's design — not features added after the fact. As a card issuer or fintech, you operate under strict regulatory obligations, and every third-party integration you add is a potential audit finding. Varmo is built so that integrating it does not expand your regulatory surface area: it never touches payment card data, requires no personal data to operate, and runs entirely over encrypted transport.
+
+## PCI-DSS
+
+Varmo is explicitly out of scope for PCI-DSS by design. The API never receives, stores, or transmits cardholder data of any kind. This means Varmo does not process:
+
+- Primary account numbers (PANs)
+- Card verification values (CVVs / CVC2)
+- Expiry dates
+- Cardholder names
+
+The only data Varmo processes is:
+
+| Field | Description |
+|---|---|
+| Dispatch UUID | A random identifier you generate to track a card dispatch |
+| Dispatch date | The date the card was dispatched from your fulfilment centre |
+| Destination postal code | Used as regional input for the delivery prediction model |
+| Destination country code | ISO 3166-1 alpha-2 country code for regional routing |
+
+None of these fields constitute cardholder data as defined by the PCI-DSS standard. Because Varmo never enters your cardholder data environment (CDE), integrating it does not bring Varmo into your CDE scope.
+
+<Note>
+Integrating Varmo does not add Varmo to your PCI-DSS scope. Varmo processes no payment card data and is not a system component within your cardholder data environment.
+</Note>
+
+## SOC 2
+
+Varmo is pursuing SOC 2 Type I certification, which audits the design of controls across the Trust Services Criteria: security, availability, processing integrity, confidentiality, and privacy. Type I assesses whether controls are suitably designed at a point in time.
+
+When the report is complete, you can request a copy by emailing [security@varmo.fi](mailto:security@varmo.fi). The report will be shared under a mutual NDA with customers evaluating or actively using Varmo.
+
+## Encryption and transport security
+
+All API traffic to and from Varmo uses TLS 1.2 or higher. Connections that attempt to negotiate an earlier protocol version are rejected. Data at rest — including dispatch records and configuration — is encrypted using AES-256. API keys are stored as salted hashes; Varmo never stores or logs a raw key value after the moment of creation.
+
+## Data retention
+
+Varmo retains dispatch records for 90 days after the expected delivery window for that dispatch closes. After that period, records are deleted automatically and cannot be recovered. If you need to retain dispatch data for longer, store it in your own systems before the 90-day window expires.
+
+## Penetration testing and vulnerability disclosure
+
+Varmo conducts annual penetration testing against the API and supporting infrastructure. If you discover a potential security vulnerability, report it through the responsible disclosure process by emailing [security@varmo.fi](mailto:security@varmo.fi). Include a description of the issue, steps to reproduce it, and the potential impact. Varmo acknowledges reports within two business days and aims to resolve confirmed vulnerabilities within 30 days.
+
+<CardGroup cols={2}>
+  <Card title="GDPR compliance" icon="shield" href="/compliance/gdpr">
+    Learn what data Varmo processes, the legal basis for processing, data subject rights, and how to request a Data Processing Agreement.
+  </Card>
+  <Card title="API key security" icon="key" href="/authentication">
+    Understand how Varmo issues and validates API keys, and how to rotate or revoke them.
+  </Card>
+</CardGroup>

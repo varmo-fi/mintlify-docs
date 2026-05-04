@@ -1,0 +1,50 @@
+---
+title: "Varmo: card delivery intelligence API"
+description: "Varmo gives card issuers real-time delivery status and predictive arrival windows so cardholders always know when their card will arrive."
+sidebarTitle: "Introduction"
+---
+
+Varmo is a REST API that sits between card dispatch and physical delivery, giving you — the card issuer — live status data, predicted arrival windows, and ready-to-display UI copy for every card in transit. This page explains the problem Varmo solves, how the API works end-to-end, and what capabilities you get out of the box.
+
+## What Varmo does
+
+After a card is dispatched, issuers enter a visibility dead zone: the card is in the postal network, but neither you nor the cardholder knows when it will arrive. Cardholders call support, activation rates drop, and onboarding momentum is lost.
+
+Varmo eliminates that dead zone. When your backend notifies Varmo of a dispatch event, Varmo begins tracking the card's transit state. From that point on, your app can query Varmo at any time to retrieve the current status, a machine-learning-backed delivery window, and localised messaging you can render directly to the cardholder — no custom copy required.
+
+## How it works
+
+<Steps>
+  <Step title="Dispatch and register">
+    When your issuer platform dispatches a card, send a notification to Varmo. Varmo assigns a `dispatch_id` (a UUID) that uniquely identifies this card's journey. Store this ID in your system — you will use it for all subsequent status queries.
+  </Step>
+  <Step title="Query the Status API">
+    Call `GET /v1/status/{id}` at any time — on page load, on a push notification trigger, or on a scheduled poll — passing your `dispatch_id` as the path parameter. The response includes the current delivery status, a predicted arrival window, and a confidence level.
+  </Step>
+  <Step title="Display to the cardholder">
+    Use the `ui_suggestion` object in the response to render a localised message directly in your app. The `recommended_message` field contains copy that is already tailored to the cardholder's locale and delivery state — drop it straight into your UI.
+  </Step>
+</Steps>
+
+## Key capabilities
+
+<CardGroup cols={2}>
+  <Card title="Real-time status" icon="radio">
+    Query the current state of any card in transit — from `dispatched` through to `delivered` — at any point during the delivery lifecycle.
+  </Card>
+  <Card title="Predictive delivery windows" icon="calendar-range">
+    Varmo returns a `min` and `max` predicted delivery date backed by a confidence level (`High`, `Medium`, or `Low`), so you can set accurate expectations with cardholders.
+  </Card>
+  <Card title="UI localisation" icon="globe">
+    Every response includes a `ui_suggestion` object with a `locale`, a `recommended_message`, and a `recommended_action` — ready to render without writing custom copy.
+  </Card>
+  <Card title="Compliance by design" icon="shield-check">
+    Varmo processes no card data, requires no PII, and is architected to stay outside PCI-DSS scope. GDPR compliance is built in from the ground up.
+  </Card>
+</CardGroup>
+
+## Security & compliance
+
+<Note>
+  Varmo is **out of scope for PCI-DSS** by design — no card numbers, CVVs, or sensitive authentication data pass through the API. Varmo requires no personally identifiable information (PII), making GDPR compliance straightforward for your integration. SOC 2 Type I certification is currently in progress. See [Security & Compliance](/compliance/overview) for full details.
+</Note>

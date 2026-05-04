@@ -1,0 +1,63 @@
+---
+title: "Delivery window predictions and confidence"
+description: "Learn how Varmo calculates delivery windows from regional latency data, and what High, Medium, and Low confidence levels mean for your UI."
+sidebarTitle: "Predictions"
+---
+
+Delivery predictions give you a structured, data-backed estimate of when a card will arrive — before the cardholder has to ask. Instead of leaving cardholders to guess from a dispatch confirmation email, you can surface a specific date range directly in your app or card management portal. Varmo produces these predictions automatically for every tracked card, refreshing accuracy as time passes from the dispatch date.
+
+## How predictions work
+
+Varmo builds each delivery prediction from four inputs:
+
+- **Dispatch date** — the timestamp at which the card entered the postal network
+- **Destination postal code** — the delivery target at street-route resolution
+- **Destination country** — used to select the correct regional model and postal service norms
+- **Regional latency model** — a continuously updated dataset built from ground-truth delivery outcomes across postal regions worldwide
+
+Varmo cross-references the dispatch date and destination against its latency model to produce a delivery window and assign a confidence level. The model is updated as new ground-truth delivery data is collected, so predictions improve over time for all regions.
+
+## The delivery window
+
+The `prediction.delivery_window` object contains two ISO 8601 date strings representing the earliest and latest expected delivery dates for the card.
+
+```json
+"prediction": {
+  "delivery_window": {
+    "min": "2026-05-02",
+    "max": "2026-05-04"
+  },
+  "confidence_level": "High"
+}
+```
+
+- `min` — the earliest date by which Varmo expects the card to arrive, based on the fastest observed transit times for the destination region
+- `max` — the latest date within the predicted window; deliveries beyond this date may trigger an `exception` status
+
+Both dates are calendar dates (not datetimes) and reflect the destination's local calendar.
+
+## Confidence levels
+
+The `confidence_level` field tells you how much historical signal Varmo has for the destination region. Use it to decide how precisely to phrase delivery messaging to cardholders.
+
+| Confidence level | What it means | Window characteristics |
+|---|---|---|
+| `High` | Strong historical signal exists for this postal region. | Narrow window, typically 2–3 days |
+| `Medium` | Moderate historical data is available; some variability in past delivery times. | Wider window, typically 4–6 days |
+| `Low` | Sparse ground-truth data for this destination. The window is a best estimate based on country-level averages. | Broad window, treat as an approximation |
+
+## Using predictions in your app
+
+The simplest path is to display the `ui_suggestion.recommended_message` field directly — it is already localized and phrased appropriately for the confidence level. See [UI suggestions](/concepts/ui-suggestions) for guidance on rendering this field.
+
+If you need custom copy or want to match your brand voice precisely, construct your message from the structured `prediction` fields instead:
+
+- Use `delivery_window.min` and `delivery_window.max` to build a date range string
+- Use `confidence_level` to decide how hedged your language should be — for `Low`, add qualifiers such as "approximately" or "estimated"
+- Use `ui_suggestion.locale` for language routing even when writing your own copy
+
+Whichever approach you choose, display the delivery window rather than a single date. A range communicates appropriate uncertainty and reduces cardholder disappointment when delivery falls on the later end.
+
+<Tip>
+  Predictions become more accurate as time elapses from the dispatch date. Refresh the status endpoint periodically — for example, once per day — so your UI always reflects the latest prediction.
+</Tip>

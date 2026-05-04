@@ -1,0 +1,86 @@
+---
+title: "Varmo API error codes and troubleshooting"
+description: "HTTP error codes returned by the Varmo API, what each code means, and how to resolve common authentication, permission, and rate limit issues."
+sidebarTitle: "Errors"
+---
+
+The Varmo API uses standard HTTP status codes to indicate whether a request succeeded or failed. Codes in the `2xx` range indicate success; codes in the `4xx` range indicate a client error you can correct; codes in the `5xx` range indicate an unexpected server-side problem. All error responses include a JSON body with `error` and `message` fields to help you identify and handle the issue programmatically.
+
+## Error response shape
+
+Every error response body follows this structure:
+
+```json
+{
+  "error": "unauthorized",
+  "message": "The provided API key is missing or invalid."
+}
+```
+
+Use the `error` field to branch your error-handling logic, and surface the `message` field in logs or internal alerts for easier debugging.
+
+## Error reference
+
+| Status code | Error code | Meaning | Resolution |
+|---|---|---|---|
+| `400` | `bad_request` | The `id` path parameter is not a valid UUID. | Check that you are passing a valid UUID v4 string (e.g., `12b986fd-8f73-4a55-b1b1-1b3f203c7522`). |
+| `401` | `unauthorized` | The API key is missing or invalid. | Verify that your request includes the `Authorization: Bearer <API_KEY>` header and that the key is active. |
+| `403` | `forbidden` | The API key does not have permission to access this dispatch ID. | Ensure the API key belongs to the same issuer that registered the dispatch. Cross-issuer lookups are not permitted. |
+| `404` | `not_found` | No dispatch record was found for the given ID. | Confirm the dispatch was successfully registered and that you are using the correct dispatch `id`. New dispatches can take up to 60 seconds to propagate. |
+| `429` | `rate_limit_exceeded` | You have exceeded the rate limit of 1,000 requests per minute. | Back off and retry after the number of seconds indicated by the `Retry-After` response header. |
+| `500` | `internal_error` | An unexpected error occurred on Varmo's servers. | Retry the request using exponential backoff. If the error persists, contact Varmo support with the request ID from the response body. |
+
+## Rate limit errors (429)
+
+<Warning>
+  When your API key exceeds **1,000 requests per minute**, the API returns a `429 Too Many Requests` response. The response includes a `Retry-After` header with the number of seconds you must wait before making another request. Retrying immediately without respecting this header will continue to return `429` responses and will not advance your rate limit window.
+</Warning>
+
+Read the `Retry-After` header and wait the specified duration before retrying:
+
+```javascript
+async function fetchStatusWithRetry(dispatchId, apiKey) {
+  const url = `https://api.varmo.fi/v1/status/${dispatchId}`;
+  const headers = { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' };
+
+  const response = await fetch(url, { headers });
+
+  if (response.status === 429) {
+    const retryAfterSeconds = parseInt(response.headers.get('Retry-After') ?? '60', 10);
+    console.log(`Rate limited. Retrying in ${retryAfterSeconds}s...`);
+    await new Promise((resolve) => setTimeout(resolve, retryAfterSeconds * 1000));
+    return fetchStatusWithRetry(dispatchId, apiKey);
+  }
+
+  return response.json();
+}
+```
+
+## Troubleshooting common issues
+
+<AccordionGroup>
+  <Accordion title="I get 401 on every request">
+    A `401 Unauthorized` error means the API cannot validate your key. Check the following:
+
+    - Your `Authorization` header must use the exact format `Bearer <API_KEY>` — including the `Bearer ` prefix with a single space between `Bearer` and your key.
+    - There should be no leading or trailing whitespace around your key value.
+    - The key must be active. If you recently rotated or revoked the key, update all clients with the new value.
+
+    Correct header format:
+    ```bash
+    Authorization: Bearer vk_live_a1b2c3d4e5f6...
+    ```
+  </Accordion>
+
+  <Accordion title="I get 404 for a dispatch I just created">
+    A newly registered dispatch is not immediately queryable. Dispatch records take **up to 60 seconds** to propagate across Varmo's systems before they are visible via `GET /v1/status/{id}`. If you receive a `404` immediately after creating a dispatch, wait at least 60 seconds and try again before concluding that the record does not exist.
+  </Accordion>
+
+  <Accordion title="Predictions show confidence_level: Low">
+    A `confidence_level` of `Low` means Varmo has limited historical delivery data for the card's destination postal code. This results in a delivery window (`min` to `max`) that is wider than usual to account for the increased uncertainty. The prediction is still valid — you should display it to users alongside the `recommended_message` from `ui_suggestion`, which is already calibrated for lower-confidence scenarios.
+  </Accordion>
+
+  <Accordion title="Webhook events are arriving out of order">
+    Webhook delivery order is not guaranteed — network conditions can cause later events to arrive before earlier ones. Do not rely on arrival order to determine the current state of a dispatch. Instead, use the `dispatch_date` timestamp field in the response body to sort events chronologically and derive the latest status from the most recent timestamp.
+  </Accordion>
+</AccordionGroup>
